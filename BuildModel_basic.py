@@ -23,7 +23,7 @@ def build(size, seq_len , learning_rate ,
           lstm_conf , \
           cnn_train_type, classes = 1, dropout = 0.0):
     input_layer = Input(shape=(seq_len, size, size, 3))
-    if(cnn_train_type!='train'):
+    if cnn_train_type!= 'train':
         if cnn_class.__name__ == "ResNet50":
             cnn = cnn_class(weights=pre_weights, include_top=False,input_shape =(size, size, 3))
         else:
