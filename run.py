@@ -1,7 +1,7 @@
 import os
 from itertools import chain
 
-from keras.callbacks import EarlyStopping, ReduceLROnPlateau, Callback
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau, Callback, ModelCheckpoint
 from keras.optimizers import RMSprop, Adam
 
 import pandas as pd
@@ -62,6 +62,10 @@ def train_eval_network(dataset_name, train_gen, validate_gen, test_x, test_y, se
                    test_history
                    ]
     )
+    filepath="/results/weights-improvement-{epoch:02d}-{val_accuracy:.2f}.hdf5"
+    checkpoint = ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+    callbacks_list = [checkpoint]
+
     history_to_save = history.history
     history_to_save['test accuracy'] = test_history.test_acc
     history_to_save['test loss'] = test_history.test_loss
@@ -201,7 +205,7 @@ figure_size = 244
 # split_ratio = 0.1
 batch_size = 2
 # batch_epoch_ratio = 0.5 #double the size because we use augmentation
-fix_len = 20
+fix_len = 10
 initial_weights = 'glorot_uniform'
 weights = 'imagenet'
 force = True
@@ -212,7 +216,7 @@ classes = 1
 cnns_arch = dict(ResNet50=ResNet50, InceptionV3=InceptionV3, VGG19=VGG19)  #
 learning_rates = [1e-4, 1e-3]
 use_augs = [True, False, ]
-fix_lens = [20, 10]
+fix_lens = [10, 5]
 optimizers = [(RMSprop, {}), (Adam, {})]
 dropouts = [0.0, 0.5]
 cnn_train_types = ['retrain', 'static']
