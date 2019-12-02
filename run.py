@@ -51,6 +51,8 @@ def train_eval_network(dataset_name, train_gen, validate_gen, test_x, test_y, se
     # 1. early stop to training after n iteration
     # 2. reducing the learning rate after k iteration where k< n
     test_history = TestCallback((test_x, test_y))
+    filepath="/results/weights-improvement-{epoch:02d}-{val_accuracy:.2f}.hdf5"
+    checkpoint = ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
     history = model.fit_generator(
         steps_per_epoch=int(float(len_train) / float(batch_size * batch_epoch_ratio)),
         generator=train_gen,
@@ -59,12 +61,9 @@ def train_eval_network(dataset_name, train_gen, validate_gen, test_x, test_y, se
         validation_steps=int(float(len_valid) / float(batch_size)),
         callbacks=[EarlyStopping(monitor='val_loss', min_delta=0.001, patience=patience_es, ),
                    ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=patience_lr, min_lr=1e-8, verbose=1),
-                   test_history
+                   test_history, checkpoint
                    ]
     )
-    filepath="/results/weights-improvement-{epoch:02d}-{val_accuracy:.2f}.hdf5"
-    checkpoint = ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
-    callbacks_list = [checkpoint]
 
     history_to_save = history.history
     history_to_save['test accuracy'] = test_history.test_acc
@@ -226,6 +225,7 @@ apply_hyper = True
 if apply_hyper:
     # the hyper tunning symulate the architechture behavior
     # we set the batch_epoch_ratio - reduced by X to have the hypertunning faster with epoches shorter
+    pd.DataFrame(initial_weights).to_csv("initial_weights.csv")
     hyper, results = hyper_tune_network(dataset_name='hocky', epochs=30,
                                         batch_size=batch_size, batch_epoch_ratio=1, figure_size=figure_size,
                                         initial_weights=initial_weights, lstm=lstm,
@@ -234,6 +234,7 @@ if apply_hyper:
                                         classes=classes, use_augs=use_augs, fix_lens=fix_lens)
 
     pd.DataFrame(results).to_csv("results_hyper.csv")
+    pd.DataFrame(hyper).to_csv("best_params_train.csv")
     cnn_arch, learning_rate, optimizer, cnn_train_type, dropout, use_aug, fix_len = hyper['cnn_arch'], \
                                                                                     hyper['learning_rate'], \
                                                                                     hyper['optimizer'], \
